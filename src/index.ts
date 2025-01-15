@@ -91,7 +91,8 @@ app.post('/translateDocument', async (c) => {
 		target_lang: targetLang,
 	});
 
-	return new Response(JSON.stringify(response));
+	return c.json({ message: response });
+	//new Response(JSON.stringify(response));
 });
 
 export default app;
