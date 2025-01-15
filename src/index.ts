@@ -50,7 +50,7 @@ app.post('/chatToDocument', async (c) => {
 			content: 'My question is: ' + question,
 		  },
 		],
-		model: 'gpt-4', // Or update to another model as necessary
+		model: 'gpt-4o', // Or update to another model as necessary
 		temperature: 0.5,
 	  });
   
