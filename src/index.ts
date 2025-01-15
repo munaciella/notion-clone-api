@@ -26,32 +26,38 @@ app.get('/', (c) => {
 });
 
 app.post('/chatToDocument', async (c) => {
-	const openai = new OpenAI({
-		apiKey: c.env.OPEN_AI_KEY,
-	});
+	try {
+		const openai = new OpenAI({
+			apiKey: c.env.OPEN_AI_KEY,
+		});
 
-	const { documentData, question } = await c.req.json();
+		const { documentData, question } = await c.req.json();
 
-	const chatCompletion = await openai.chat.completions.create({
-		messages: [
-			{
-				role: 'system',
-				content:
-				'You are an assistant helping the user to chat to a document, I am providing a JSON file of the markdown for the document. Using this, answer the user question in the clearest way possible. The document is about: ' +
-				documentData,
-			},
-			{
-				role: 'user',
-				content: 'My question is: ' + question,
-			},
-		],
-		model: 'gpt-3.5-turbo',
-		temperature: 0.5,
-	});
+		const chatCompletion = await openai.chat.completions.create({
+			messages: [
+				{
+					role: 'system',
+					content:
+						'You are an assistant helping the user to chat to a document, I am providing a JSON file of the markdown for the document. Using this, answer the user question in the clearest way possible. The document is about: ' +
+						documentData,
+				},
+				{
+					role: 'user',
+					content: 'My question is: ' + question,
+				},
+			],
+			model: 'gpt-3.5-turbo',
+			temperature: 0.5,
+		});
 
-	const response = chatCompletion.choices[0]?.message?.content;
+		const response = chatCompletion.choices[0]?.message?.content;
 
-	return c.json({ message: response });
+		return c.json({ message: response });
+
+	} catch (error) {
+		console.error("Error in /chatToDocument:", error);
+		return c.json({ error: "An error occurred while processing the request." }, 500);
+	}
 });
 
 app.post('/translateDocument', async (c) => {
