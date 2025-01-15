@@ -50,7 +50,7 @@ app.post('/chatToDocument', async (c) => {
 			content: 'My question is: ' + question,
 		  },
 		],
-		model: 'gpt-3.5-turbo', // Or update to another model as necessary
+		model: 'gpt-4', // Or update to another model as necessary
 		temperature: 0.5,
 	  });
   
@@ -76,7 +76,7 @@ app.post('/chatToDocument', async (c) => {
 	  }
 	}
   });
-  
+
 app.post('/translateDocument', async (c) => {
 	const { documentData, targetLang } = await c.req.json();
 
