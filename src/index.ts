@@ -105,22 +105,27 @@ app.post('/chatToDocument', async (c) => {
 		messages: [
 		  {
 			role: 'system',
-			content: 'Categorize the following document into one of the following categories: Technical, Business, Creative, Other.'
+			content: 'Categorize the following document into one of the following categories: Technical, Business, Creative, Other.',
 		  },
 		  {
 			role: 'user',
-			content: documentData
-		  }
+			content: documentData,
+		  },
 		],
 		max_tokens: 10,
 	  });
   
 	  return c.json({ category: response.choices[0].message.content?.trim() });
-	} catch (error) {
-	  console.error(error);
+	} catch (error: unknown) {
+	  console.error('Error categorizing document:', error);
+  
 	  if (error instanceof Error && 'response' in error && (error.response as any)?.status === 429) {
+		console.error('Rate limit exceeded:', error.response);
 		return c.json({ error: 'Rate limit exceeded.' }, 429);
 	  }
+  
+	  console.error('Detailed error information:', error);
+  
 	  return c.json({ error: 'Error categorizing document.' }, 500);
 	}
   });
