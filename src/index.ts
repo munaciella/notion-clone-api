@@ -25,57 +25,57 @@ app.get('/', (c) => {
 	return c.text('Hono backend is up and running!');
 });
 
+let isRequestPending = false;
+
 app.post('/chatToDocument', async (c) => {
-	try {
-	  // Log incoming request data
-	  console.log("Incoming request data:", await c.req.json());
-  
-	  const openai = new OpenAI({
-		apiKey: c.env.OPEN_AI_KEY,
-	  });
-  
-	  const { documentData, question } = await c.req.json();
-  
-	  // Log data being sent to OpenAI API
-	  console.log("Sending data to OpenAI:", { documentData, question });
-  
-	  const chatCompletion = await openai.chat.completions.create({
-		messages: [
-		  {
-			role: 'system',
-			content: 'You are an assistant helping the user to chat to a document, I am providing a JSON file of the markdown for the document. Using this, answer the user question in the clearest way possible. The document is about: ' + documentData,
-		  },
-		  {
-			role: 'user',
-			content: 'My question is: ' + question,
-		  },
-		],
-		model: 'gpt-3.5-turbo', // Or update to another model as necessary
-		temperature: 0.5,
-	  });
-  
-	  const response = chatCompletion.choices[0]?.message?.content;
-  
-	  if (!response) {
-		throw new Error('No response from OpenAI');
-	  }
-  
-	  // Log the OpenAI response
-	  console.log("OpenAI response:", response);
-  
-	  return c.json({ message: response });
-  
-	} catch (error: unknown) {
-	  // Log any errors that occur
-	  console.error("Error in /chatToDocument route:", error);
-  
-	  if (error instanceof Error) {
-		return c.json({ error: error.message || 'An error occurred while processing the request.' }, 500);
-	  } else {
-		return c.json({ error: 'An unknown error occurred while processing the request.' }, 500);
-	  }
-	}
-  });
+  if (isRequestPending) {
+    return c.json({ error: 'Too many requests. Please wait.' }, 429);
+  }
+
+  isRequestPending = true;
+
+  try {
+    console.log("Incoming request data:", await c.req.json());
+
+    const openai = new OpenAI({ apiKey: c.env.OPEN_AI_KEY });
+    const { documentData, question } = await c.req.json();
+
+    const truncatedDocument = documentData.substring(0, 2000); 
+    console.log("Sending data to OpenAI:", { truncatedDocument, question });
+
+    const chatCompletion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `You are an assistant. Here is a document: ${truncatedDocument}. Answer this question: ${question}.`,
+        },
+      ],
+      model: 'gpt-3.5-turbo',
+      temperature: 0.5,
+    });
+
+    const response = chatCompletion.choices[0]?.message?.content;
+
+    if (!response) {
+      throw new Error('No response from OpenAI');
+    }
+
+    console.log("OpenAI response:", response);
+
+    return c.json({ message: response });
+
+  } catch (error) {
+    console.error("Error in /chatToDocument route:", error);
+
+    if (error instanceof Error) {
+      return c.json({ error: error.message || 'An error occurred.' }, 500);
+    } else {
+      return c.json({ error: 'An unknown error occurred.' }, 500);
+    }
+  } finally {
+    isRequestPending = false;
+  }
+});
 
   app.post('/translateDocument', async (c) => {
 	const { documentData, targetLang } = await c.req.json();
