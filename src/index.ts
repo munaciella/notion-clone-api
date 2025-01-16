@@ -94,4 +94,35 @@ app.post('/chatToDocument', async (c) => {
 	return c.json({ translated_text: response.translated_text });
   });
 
-export default app;
+  app.post('/categorizeDocument', async (c) => {
+	const { documentData } = await c.req.json();
+  
+	try {
+	  const openai = new OpenAI({ apiKey: c.env.OPEN_AI_KEY });
+  
+	  const response = await openai.chat.completions.create({
+		model: 'gpt-3.5-turbo',
+		messages: [
+		  {
+			role: 'system',
+			content: 'Categorize the following document into one of the following categories: Technical, Business, Creative, Other.'
+		  },
+		  {
+			role: 'user',
+			content: documentData
+		  }
+		],
+		max_tokens: 10,
+	  });
+  
+	  return c.json({ category: response.choices[0].message.content?.trim() });
+	} catch (error) {
+	  console.error(error);
+	  if (error instanceof Error && 'response' in error && (error.response as any)?.status === 429) {
+		return c.json({ error: 'Rate limit exceeded.' }, 429);
+	  }
+	  return c.json({ error: 'Error categorizing document.' }, 500);
+	}
+  });
+  
+  export default app;
